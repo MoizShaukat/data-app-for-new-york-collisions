@@ -51,13 +51,20 @@ injured_people = st.slider('Number of persons injured in collisions', 1, 19)
 st.map(data.query("`number of persons injured` >= @injured_people")[['latitude', 'longitude']].dropna(how= 'any'))
 
 
+# Display a header in the Streamlit app
 st.header('How many collisions occur during a given time in a day?')
+
+# Create a slider for selecting an hour of the day and store the selected hour in the `hour` variable
 hour = st.slider('Hour to look at', 0, 23)
+
+# Filter the `data` dataset to include only rows with the selected hour
 data = data[data['date/time'].dt.hour == hour]
 
+# Compute the number of rows in the filtered dataset and display it in a Markdown block
 num_rows = data.shape[0]
 st.markdown('##### Vehicle collisions between %i:00 and %i:00: %i' % (hour, (hour + 1) % 24, num_rows))
 
+# Compute the midpoint of the latitude and longitude coordinates in the filtered dataset and display it on a map
 midpoint = (np.average(data['latitude']), np.average(data['longitude']))
 
 st.write(pdk.Deck(
@@ -82,18 +89,29 @@ st.write(pdk.Deck(
     ],
 ))
 
-
+# Set subheader for display with formatted string showing hour range
 st.subheader("Breakdown by minute between %i:00 and %i:00" % (hour, (hour + 1) %24))
+
+# Filter data to include only rows where hour is within the range of the current hour and the next hour
 filtered = data[
     (data['date/time'].dt.hour >= hour) & (data['date/time'].dt.hour < (hour+1))
 ]
 
+# Calculate the frequency distribution of minutes within the hour using numpy histogram function
 hist = np.histogram(filtered['date/time'].dt.minute, bins = 60, range=(0, 60))[0]
+
+#Create a pandas DataFrame with minute and corresponding crashes count for plotting
 chart_data = pd.DataFrame({'minute': range(60), 'crashes': hist})
+
+# Create a bar plot using plotly express with minute and crashes count as x and y axis, and minute and crashes count as hover_data
+# Set plot height to 400 pixels
 fig = px.bar(chart_data, x='minute', y='crashes', hover_data = ['minute', 'crashes'], height = 400)
+
+# Write plot to Streamlit app
 st.write(fig)
 
 st.header('Top 5 dangerous streets by affected type')
+
 select = st.selectbox('Affected type of people', ['Pedestrians', 'Cyclists', 'Motorists'])
 
 if select == 'pedestrians':
